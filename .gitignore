@@ -1,0 +1,11 @@
+yarn.lock
+logs
+target
+/.idea
+/.idea_modules
+/.classpath
+/.project
+/.settings
+/RUNNING_PID
+app/assets/javascripts/build
+node_modules
