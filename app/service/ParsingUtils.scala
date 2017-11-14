@@ -24,4 +24,13 @@ object ParsingUtils {
       case NonFatal(e) => null
     }
   }
+
+  def toJavaFloat(txt: String): java.lang.Float = {
+    try{
+      txt.replaceAll("\\s", "").toFloat
+    } catch {
+      case NonFatal(e) => null
+    }
+  }
+
 }

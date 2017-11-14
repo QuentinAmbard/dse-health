@@ -26,6 +26,10 @@ trait DSECheckPlugin {
     scala.io.Source.fromFile(s"$tmpPath/$nodeId/info").getLines()
   }
 
+  def readTablestat(tmpPath: String, nodeId: String): String ={
+    scala.io.Source.fromFile(s"$tmpPath/$nodeId/cfstat").mkString
+  }
+
 
   def readCassandraYaml(tmpPath: String, nodeId: String): JsonNode ={
     val mapper = new ObjectMapper(new YAMLFactory())

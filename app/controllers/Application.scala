@@ -23,7 +23,7 @@ class Application @Inject () (plugins: java.util.Set[DSECheckPlugin]) extends Co
     request.body.file("analysis").map { analysis =>
       import java.io.File
       val filename = analysis.filename
-      val reportId = Random.alphanumeric.take(10).mkString("")
+      val reportId = Random.alphanumeric.take(20).mkString("")
       val tmpFolder = s"/tmp/dse-health/$reportId"
       try {
         FileUtils.forceMkdir(new File(tmpFolder))

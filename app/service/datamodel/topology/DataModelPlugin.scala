@@ -10,44 +10,33 @@ import scala.util.matching.Regex
   * Check data model.
   */
 @Singleton
-class DataModelPlugin @Inject()(nodeRepository: CassandraTableRepository) extends DSECheckPlugin {
+class DataModelPlugin @Inject()(tableRepository: CassandraTableRepository, keyspaceRepository: CassandraKeyspaceRepository) extends DSECheckPlugin {
   override def process(reportId: String, tmpPath: String): Unit = {
     implicit val limiter = new FutureLimiter[Void]()
     forEachNode(tmpPath, (nodePath, nodeIp) => {
-      val cfstat = scala.io.Source.fromFile(s"$tmpPath/$nodeIp/cfstat").mkString
-      val tables = extractCassandraTable(cfstat)
-      //      var keyspace = ""
-      //      val node = new CassandraTable(reportId, nodeIp)
-      //      lines.foreach(line => {
-      //        if (line.startsWith("Keyspace")) {
-      //          keyspace = line.substring(line.indexOf(":") + 1)
-      //        } else if (line.contains("CassandraTable:")) {
-      //          node.setRack(line.substring(line.indexOf(":") + 1))
-      //        } else if (line.startsWith("ID")) {
-      //          node.setId(line.substring(line.indexOf(":") + 1))
-      //        }
-      //      })
-      //tables.foreach(table => limiter.add(nodeRepository.saveAsync(table)))
+      val cfstat = readTablestat(tmpPath, nodeIp)
+      val keyspacesAndTables = extractCassandraTable(cfstat, reportId)
+      keyspacesAndTables.foreach{case (keyspace, tables)=> {
+        limiter.add(keyspaceRepository.saveAsync(keyspace))
+        tables.foreach(table => {
+          limiter.add(tableRepository.saveAsync(table))
+        })
+      }}
     })
     limiter.waitAll()
   }
 
 
-  private[topology] def extractCassandraTable(cfstat: String) = {
-    val keyspaces = splitKeyspaces(cfstat)
-
-
-
-
-//    keyspaces.flatMap(keyspace => {
-//      tableMatcher.findAllIn(keyspace).map(s => {
-//        new CassandraTable()
-//      })
-//    })
+  private[topology] def extractCassandraTable(cfstat: String, reportId:String) = {
+    val keyspaces: Array[(CassandraKeyspace, String)] = splitKeyspaces(cfstat, reportId)
+    keyspaces.map{case (ks, tablesStr) => {
+      val tables: Array[CassandraTable] = splitTables(tablesStr).map(extractTable(_, reportId))
+      (ks -> tables)
+    }}.toMap
   }
 
-  private[topology] def extractTable(table: String) = {
-    val tableRegexp ="""(?s)\s*Table: (.*)
+  private[topology] def extractTable(table: String, reportId: String) = {
+    val tableRegexp ="""(?s)\s*Table( \(index\))?: (.*)
        |\s*SSTable count: (.*)
        |\s*Space used \(live\): (.*)
        |\s*Space used \(total\): (.*)
@@ -64,6 +53,7 @@ class DataModelPlugin @Inject()(nodeRepository: CassandraTableRepository) extend
        |\s*Local write count: (.*)
        |\s*Local write latency: (.*) ms
        |\s*Pending flushes: (.*)
+       |\s*Percent repaired: (.*)
        |\s*Bloom filter false positives: (.*)
        |\s*Bloom filter false ratio: (.*)
        |\s*Bloom filter space used: (.*)
@@ -79,15 +69,54 @@ class DataModelPlugin @Inject()(nodeRepository: CassandraTableRepository) extend
        |\s*Maximum tombstones per slice \(last five minutes\): (.*)
        |\s*Dropped Mutations: (.*)""".stripMargin.r
     val m: Regex.Match = tableRegexp.findFirstMatchIn(table).get
-    new CassandraTable().setName(m.group(1))
+    val tbl = new CassandraTable().setName(m.group(2))
+    tbl.setIndex(m.group(1) == null )
+    tbl
+    .setSstableCount(ParsingUtils.toJavaLong(m.group(3)))
+    .setSpaceUsedLive(ParsingUtils.toJavaLong(m.group(4)))
+    .setSpaceUsedTotal(ParsingUtils.toJavaLong(m.group(5)))
+    .setSpaceUsedSnapshot(ParsingUtils.toJavaLong(m.group(6)))
+    .setOffHeapMemoryUsed(ParsingUtils.toJavaLong(m.group(7)))
+    .setCompressionRation(ParsingUtils.toJavaFloat(m.group(8)))
+    .setKeyNumber(ParsingUtils.toJavaLong(m.group(9)))
+    .setMemtableCellCount(ParsingUtils.toJavaLong(m.group(10)))
+    .setMemtableDataSize(ParsingUtils.toJavaLong(m.group(11)))
+    .setMemtableOffHeapUsed(ParsingUtils.toJavaLong(m.group(12)))
+    .setMemtableSwitchCount(ParsingUtils.toJavaLong(m.group(13)))
+    .setLocalReadCount(ParsingUtils.toJavaLong(m.group(14)))
+    .setLocalReadLatency(ParsingUtils.toJavaFloat(m.group(15)))
+    .setLocalWriteCount(ParsingUtils.toJavaLong(m.group(16)))
+    .setLocalWriteLatency(ParsingUtils.toJavaFloat(m.group(17)))
+    .setPendingFlushes(ParsingUtils.toJavaLong(m.group(18)))
+    .setPercentRepaired(ParsingUtils.toJavaFloat(m.group(19)))
+    .setBloomFilterFalsePositive(ParsingUtils.toJavaLong(m.group(20)))
+    .setBloomFilterFalseRatio(ParsingUtils.toJavaFloat(m.group(21)))
+    .setBloomFilterSpaceUsed(ParsingUtils.toJavaLong(m.group(22)))
+    .setBloomFilterOffHeapUsed(ParsingUtils.toJavaLong(m.group(23)))
+    .setIndexSummaryOffHeapUsed(ParsingUtils.toJavaLong(m.group(24)))
+    .setCompressionMetadataOffHeapUsed(ParsingUtils.toJavaLong(m.group(25)))
+    .setPartitionMinBytes(ParsingUtils.toJavaLong(m.group(26)))
+    .setPartitionMaxBytes(ParsingUtils.toJavaLong(m.group(27)))
+    .setPartitionMeanBytes(ParsingUtils.toJavaLong(m.group(28)))
+    .setAverageLiveCellPerSlice(ParsingUtils.toJavaFloat(m.group(29)))
+    .setMaximumLiveCellPerSlice(ParsingUtils.toJavaLong(m.group(30)))
+    .setAverageTombstonePerSlice(ParsingUtils.toJavaFloat(m.group(31)))
+    .setMaximumTombstonePerSlice(ParsingUtils.toJavaLong(m.group(32)))
+    .setDroppedMutation(ParsingUtils.toJavaLong(m.group(33)))
+
   }
 
-  private[topology] def splitKeyspaces(cfstat: String) = {
+  private[topology] def splitTables(tables: String) = {
+    //Filter on 5 to remove first empty line due tu \n \t in the regex
+    tables.split("""(?=\sTable[: ])""").filter(_.size>3)
+  }
+
+  private[topology] def splitKeyspaces(cfstat: String, reportId:String): Array[(CassandraKeyspace, String)] = {
     val ksReports = cfstat.split("----------------").filter(!_.startsWith("Total number of tables")).filter(_.contains("Keyspace"))
-    ksReports.map(extractKeyspaceData(_))
+    ksReports.map(extractKeyspaceData(_, reportId))
   }
 
-  private[topology] def extractKeyspaceData(ksReport: String) = {
+  private[topology] def extractKeyspaceData(ksReport: String, reportId: String) = {
     val ksRegex =
       """(?s)\s?Keyspace : (.*)
         |\s?Read Count: (.*)
@@ -98,6 +127,7 @@ class DataModelPlugin @Inject()(nodeRepository: CassandraTableRepository) extend
         |(.*)""".stripMargin.r
     val m: Regex.Match = ksRegex.findFirstMatchIn(ksReport).get
     val ks = new CassandraKeyspace()
+      .setReportId(reportId)
       .setName(m.group(1))
       .setReadCount(ParsingUtils.toJavaLong(m.group(2)))
       .setReadLatency(ParsingUtils.toJavaInteger(m.group(3)))

@@ -19,4 +19,11 @@ class ParsingUtilsTest extends FunSuite {
     assert(ParsingUtils.toJavaLong("99995") === 99995)
   }
 
+  test("testToJavaFloat") {
+    assert(ParsingUtils.toJavaFloat("Nan") === null)
+    assert(ParsingUtils.toJavaFloat(" 12  ") === 12F)
+    assert(ParsingUtils.toJavaFloat(" 12.00  ") === 12F)
+    assert(ParsingUtils.toJavaFloat("999.95") === 999.95F)
+  }
+
 }

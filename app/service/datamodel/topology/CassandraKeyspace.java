@@ -21,7 +21,6 @@ public class CassandraKeyspace {
     private Integer writeLatency;
     private Integer pendingFlushes;
 
-
     public String getReportId() {
         return reportId;
     }
@@ -102,6 +101,7 @@ public class CassandraKeyspace {
         this.pendingFlushes = pendingFlushes;
         return this;
     }
+
 
     @Override
     public boolean equals(Object o) {
