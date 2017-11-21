@@ -1,4 +1,4 @@
-package service.datamodel.topology
+package service.datamodel
 
 import javax.inject.{Inject, Singleton}
 

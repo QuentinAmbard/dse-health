@@ -1,4 +1,4 @@
-package service.datamodel.topology
+package service.datamodel
 
 import org.scalamock.scalatest.MockFactory
 

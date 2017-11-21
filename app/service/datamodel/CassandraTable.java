@@ -1,4 +1,4 @@
-package service.datamodel.topology;
+package service.datamodel;
 
 import com.datastax.driver.mapping.annotations.ClusteringColumn;
 import com.datastax.driver.mapping.annotations.Column;
