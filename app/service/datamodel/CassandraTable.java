@@ -6,40 +6,8 @@ import com.datastax.driver.mapping.annotations.PartitionKey;
 
 /**
  * CREATE KEYSPACE dsehealth WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
- * create name dsehealth.tablestat (
- * report_id text,
- * ks text,
- * name text,
- * sstableCount text,
- * spaceUsedLive text,
- * spaceUsedTotal text,
- * spaceUsedSnapshot text,
- * compressionRation float,
- * keyNumber bigint,
- * memtableCellCount bigint,
- * memtableDataSize bigint,
- * memtableOffHeapUsed bigint,
- * memtableSwitchCount bigint,
- * localReadCount bigint,
- * localReadLatency float,
- * localWriteCount bigint,
- * localWriteLatency float,
- * pendingFlushes bigint,
- * bloomFilterFalsePositive bigint,
- * bloomFilterFalseRatio float,
- * bloomFilterSpaceUsed bigint,
- * bloomFilterOffHeapUsed bigint,
- * indexSummaryOffHeapUsed bigint,
- * compressionMetadataOffHeapUsed bigint,
- * partitionMinBytes bigint,
- * partitionMaxBytes bigint,
- * partitionMeanBytes bigint,
- * averageLiveCellPerSlice float,
- * maximumLiveCellPerSlice bigint,
- * averageTombstonePerSlice float,
- * maximumTombstonePerSlice bigint,
- * primary key ((report_id), ks, tbl));
- */
+ **/
+// create table dsehealth.cassandra_table (report_id text, ks text, name text, sstableCount text, spaceUsedLive text, spaceUsedTotal text, spaceUsedSnapshot text, compressionRation float, keyNumber bigint, memtableCellCount bigint, memtableDataSize bigint, memtableOffHeapUsed bigint,  memtableSwitchCount bigint, localReadCount bigint, localReadLatency float, localWriteCount bigint, localWriteLatency float, pendingFlushes bigint, percentRepaired float, bloomFilterFalsePositive bigint, bloomFilterFalseRatio float, bloomFilterSpaceUsed bigint, bloomFilterOffHeapUsed bigint, indexSummaryOffHeapUsed bigint, compressionMetadataOffHeapUsed bigint, partitionMinBytes bigint, partitionMaxBytes bigint, partitionMeanBytes bigint, averageLiveCellPerSlice float, maximumLiveCellPerSlice bigint, averageTombstonePerSlice float, maximumTombstonePerSlice bigint, droppedMutation bigint, primary key ((report_id), ks, name));
 
 @com.datastax.driver.mapping.annotations.Table(keyspace = "dsehealth", name = "cassandra_table", readConsistency = "ONE", writeConsistency = "ONE")
 public class CassandraTable {

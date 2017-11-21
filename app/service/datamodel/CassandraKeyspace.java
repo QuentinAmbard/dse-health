@@ -4,6 +4,7 @@ import com.datastax.driver.mapping.annotations.ClusteringColumn;
 import com.datastax.driver.mapping.annotations.Column;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 
+// create table dsehealth.cassandra_keyspace (report_id text, name text, replication text, durable_write text, read_count bigint, read_latency int, write_count bigint, write_latency int, pending_flushes int, primary key ((report_id), name));
 @com.datastax.driver.mapping.annotations.Table(keyspace = "dsehealth", name = "cassandra_keyspace", readConsistency = "ONE", writeConsistency = "ONE")
 public class CassandraKeyspace {
 

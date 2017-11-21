@@ -27,7 +27,7 @@ class DataModelPlugin @Inject()(tableRepository: CassandraTableRepository, keysp
   }
 
 
-  private[topology] def extractCassandraTable(cfstat: String, reportId:String) = {
+  def extractCassandraTable(cfstat: String, reportId:String) = {
     val keyspaces: Array[(CassandraKeyspace, String)] = splitKeyspaces(cfstat, reportId)
     keyspaces.map{case (ks, tablesStr) => {
       val tables: Array[CassandraTable] = splitTables(tablesStr).map(extractTable(_, reportId))
@@ -35,7 +35,7 @@ class DataModelPlugin @Inject()(tableRepository: CassandraTableRepository, keysp
     }}.toMap
   }
 
-  private[topology] def extractTable(table: String, reportId: String) = {
+  def extractTable(table: String, reportId: String) = {
     val tableRegexp ="""(?s)\s*Table( \(index\))?: (.*)
        |\s*SSTable count: (.*)
        |\s*Space used \(live\): (.*)
@@ -106,17 +106,17 @@ class DataModelPlugin @Inject()(tableRepository: CassandraTableRepository, keysp
 
   }
 
-  private[topology] def splitTables(tables: String) = {
+  def splitTables(tables: String) = {
     //Filter on 5 to remove first empty line due tu \n \t in the regex
     tables.split("""(?=\sTable[: ])""").filter(_.size>3)
   }
 
-  private[topology] def splitKeyspaces(cfstat: String, reportId:String): Array[(CassandraKeyspace, String)] = {
+  def splitKeyspaces(cfstat: String, reportId:String): Array[(CassandraKeyspace, String)] = {
     val ksReports = cfstat.split("----------------").filter(!_.startsWith("Total number of tables")).filter(_.contains("Keyspace"))
     ksReports.map(extractKeyspaceData(_, reportId))
   }
 
-  private[topology] def extractKeyspaceData(ksReport: String, reportId: String) = {
+  def extractKeyspaceData(ksReport: String, reportId: String) = {
     val ksRegex =
       """(?s)\s?Keyspace : (.*)
         |\s?Read Count: (.*)
