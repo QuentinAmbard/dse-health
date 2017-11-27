@@ -9,7 +9,7 @@ import java.util.UUID;
 
 /**
  * CREATE KEYSPACE dsehealth WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
- * create table dsehealth.log (report_id text, node_id text, date timeuuid, level text, thread text, clazz text, line text, message text, primary key ((report_id, node_id), date))  WITH CLUSTERING ORDER BY (date ASC);
+ * create table dsehealth.log (report_id text, node_id uuid, date timeuuid, level text, thread text, clazz text, line text, message text, primary key ((report_id, node_id), date))  WITH CLUSTERING ORDER BY (date ASC);
  */
 
 @Table(keyspace = "dsehealth", name = "log", readConsistency = "ONE", writeConsistency = "ONE")
@@ -20,7 +20,7 @@ public class Log {
     private String reportId;
     @PartitionKey(1)
     @Column(name = "node_id")
-    private String nodeId;
+    private UUID nodeId;
     @ClusteringColumn
     private UUID date;
     private String level;
@@ -32,7 +32,7 @@ public class Log {
     public Log() {
     }
 
-    public Log(String reportId, String nodeId, UUID date, String level, String thread, String clazz, String line, String message) {
+    public Log(String reportId, UUID nodeId, UUID date, String level, String thread, String clazz, String line, String message) {
         this.reportId = reportId;
         this.nodeId = nodeId;
         this.date = date;
@@ -51,11 +51,11 @@ public class Log {
         this.reportId = reportId;
     }
 
-    public String getNodeId() {
+    public UUID getNodeId() {
         return nodeId;
     }
 
-    public void setNodeId(String nodeId) {
+    public void setNodeId(UUID nodeId) {
         this.nodeId = nodeId;
     }
 

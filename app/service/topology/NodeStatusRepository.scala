@@ -5,22 +5,21 @@ import javax.inject.{Inject, Singleton}
 import com.datastax.driver.mapping.{Mapper, MappingManager}
 import com.google.common.util.concurrent.ListenableFuture
 import service.CassandraSession
-import service.datamodel.CassandraTable
 
 @Singleton
-class NodeRepository @Inject()(cSession: CassandraSession) {
-  var mapper: Option[Mapper[Node]] = None
+class NodeStatusRepository @Inject()(cSession: CassandraSession) {
+  var mapper: Option[Mapper[NodeStatus]] = None
   @Inject
   def init(cSession: CassandraSession): Unit ={
     val manager = new MappingManager(cSession.session)
-    mapper = Some(manager.mapper(classOf[Node]))
+    mapper = Some(manager.mapper(classOf[NodeStatus]))
   }
 
-  def save(log: Node): Unit = {
+  def save(log: NodeStatus): Unit = {
     mapper.get.save(log)
   }
 
-  def saveAsync(log: Node): ListenableFuture[Void] = {
+  def saveAsync(log: NodeStatus): ListenableFuture[Void] = {
     mapper.get.saveAsync(log)
   }
 

@@ -63,49 +63,51 @@ class Greeter extends React.Component {
     }
 
     generateBashScript() {
-        var script = `mkdir -p ${this.state.tmpFolder}/127.0.0.1/logs
-cp ${this.state.installFolder}/resources/cassandra/conf/cassandra.yaml ${this.state.tmpFolder}/127.0.0.1/cassandra.yaml
-cp ${this.state.installFolder}/resources/dse/conf/dse.yaml ${this.state.tmpFolder}/127.0.0.1/dse.yaml
-cp ${this.state.installFolder}/log/cassandra/system.log* ${this.state.tmpFolder}/127.0.0.1/logs/
+        var script = `#get the current node ID
+export DSE_CHECK_NODE_ID=$(nodetool info | grep -e "ID" |  sed  's/ID\s*:\s*//g')       
+mkdir -p ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/logs
+cp ${this.state.installFolder}/resources/cassandra/conf/cassandra.yaml ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/cassandra.yaml
+cp ${this.state.installFolder}/resources/dse/conf/dse.yaml ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/dse.yaml
+cp ${this.state.installFolder}/log/cassandra/system.log* ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/logs/
 #remove password & sensitive configuration from configuration files
-sed -i 's/^\\(.*password.*\)\:.*$/\\1: xxxxx/g' ${this.state.tmpFolder}/127.0.0.1/cassandra.yaml
-sed -i 's/^\\(.*password.*\)\:.*$/\\1: xxxxx/g' ${this.state.tmpFolder}/127.0.0.1/dse.yaml
+sed -i 's/^\\(.*password.*\)\:.*$/\\1: xxxxx/g' ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/cassandra.yaml
+sed -i 's/^\\(.*password.*\)\:.*$/\\1: xxxxx/g' ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/dse.yaml
 #analyze keyspaces and system keyspaces
-cqlsh -e 'select * from system_schema.keyspaces' > ${this.state.tmpFolder}/127.0.0.1/system_schema.keyspaces
-cqlsh -e "copy system.local to '${this.state.tmpFolder}/127.0.0.1/system.local' "
-cqlsh -e 'desc schema' > ${this.state.tmpFolder}/127.0.0.1/schema.cql
+cqlsh -e 'select * from system_schema.keyspaces' > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/system_schema.keyspaces
+cqlsh -e "copy system.local to '${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/system.local' "
+cqlsh -e 'desc schema' > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/schema.cql
 #cfstats
-nodetool cfstats > ${this.state.tmpFolder}/127.0.0.1/cfstats
-nodetool status > ${this.state.tmpFolder}/127.0.0.1/status
-nodetool info > ${this.state.tmpFolder}/127.0.0.1/info
-nodetool tablehistograms xxx
+nodetool cfstats > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/cfstats
+nodetool status > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/status
+nodetool info > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/info
+#TODO: nodetool tablehistograms xxx
 #check os settings:
-sysctl -a > ${this.state.tmpFolder}/127.0.0.1/sysctl
+sysctl -a > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/sysctl
 #check zone_reclaim_mode
-cat /proc/sys/vm/zone_reclaim_mode > ${this.state.tmpFolder}/127.0.0.1/zone_reclaim_mode
+cat /proc/sys/vm/zone_reclaim_mode > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/zone_reclaim_mode
 #check disks settings:
-mkdir -p ${this.state.tmpFolder}/127.0.0.1/disks
+mkdir -p ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/disks
 `;
         this.state.disks.map((disk) => {
-            script += `mkdir ${this.state.tmpFolder}/127.0.0.1/disks/${disk.name}
-cat /sys/block/${disk.name}/queue/scheduler > ${this.state.tmpFolder}/127.0.0.1/disks/${disk.name}/scheduler
-cat /sys/block/${disk.name}/queue/read_ahead_kb > ${this.state.tmpFolder}/127.0.0.1/disks/${disk.name}/read_ahead_kb
-cat /sys/block/${disk.name}/queue/rotational > ${this.state.tmpFolder}/127.0.0.1/disks/${disk.name}/rotational
-echo ${disk.ssd}> ${this.state.tmpFolder}/127.0.0.1/disks/${disk.name}/ssd
+            script += `mkdir ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/disks/${disk.name}
+cat /sys/block/${disk.name}/queue/scheduler > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/disks/${disk.name}/scheduler
+cat /sys/block/${disk.name}/queue/read_ahead_kb > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/disks/${disk.name}/read_ahead_kb
+cat /sys/block/${disk.name}/queue/rotational > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/disks/${disk.name}/rotational
+echo ${disk.ssd}> ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/disks/${disk.name}/ssd
 `
         })
         script +=`#disable transparent huge pages
 #check limits
 export PID=\`ps aux | grep com.datastax.bdp.DseModule | grep java | awk '{print $2}'\`
-cat "/proc/$PID/limits" > ${this.state.tmpFolder}/127.0.0.1/limits
-strings "/proc/$PID/environ" > ${this.state.tmpFolder}/127.0.0.1/environ
-strings "/proc/$PID/cmdline" > ${this.state.tmpFolder}/127.0.0.1/cmdline
+cat "/proc/$PID/limits" > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/limits
+strings "/proc/$PID/environ" > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/environ
+strings "/proc/$PID/cmdline" > ${this.state.tmpFolder}/$DSE_CHECK_NODE_ID/cmdline
 
-tar -czvf ${this.state.tmpFolder}/report-127.0.0.1.tar.gz -C ${this.state.tmpFolder} 127.0.0.1
+tar -czvf ${this.state.tmpFolder}/report-$DSE_CHECK_NODE_ID.tar.gz -C ${this.state.tmpFolder} $DSE_CHECK_NODE_ID
 
 #on the main host
 mkdir -p /tmp/dse-health
-scp 127.0.0.1:${this.state.tmpFolder}/report-127.0.0.1.tar.gz ${this.state.tmpFolder}/report-127.0.0.1.tar.gz`
+scp localhost:127.0.0.1:${this.state.tmpFolder}/report-*.tar.gz ${this.state.tmpFolder}`
         return script
     }
 

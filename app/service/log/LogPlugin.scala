@@ -27,8 +27,8 @@ class LogPlugin @Inject()(logRepository: LogRepository) extends DSECheckPlugin {
 
   override def process(reportId: String, tmpPath: String): Unit = {
     val df = ISODateTimeFormat.dateTimeNoMillis
-    forEachNode(tmpPath, (path, nodeIp) => {
-      val source = scala.io.Source.fromFile(s"$tmpPath/$nodeIp/logs/system.log")
+    forEachNode(tmpPath, (path, nodeId) => {
+      val source = scala.io.Source.fromFile(s"$tmpPath/$nodeId/logs/system.log")
       val limiter = new FutureLimiter[Void](100)
       try source.getLines().foreach(line => {
         val gm = grok.`match`(line)
@@ -38,7 +38,7 @@ class LogPlugin @Inject()(logRepository: LogRepository) extends DSECheckPlugin {
           val date = LocalDateTime.of(Integer.valueOf(map.get("YEAR").toString), Integer.valueOf(map.get("MONTHNUM").toString), Integer.valueOf(map.get("MONTHDAY").toString),
             Integer.valueOf(map.get("HOUR").toString), Integer.valueOf(map.get("MINUTE").toString), Integer.valueOf(map.get("SECOND").toString), Integer.valueOf(map.get("MILLISECOND").toString) * 1000 * 1000)
           val uuid = TimeUUIDUtils.fromTimestampMs(date.toInstant(ZoneOffset.UTC).toEpochMilli)
-          val log = new Log(reportId, nodeIp, uuid, map.get("logLevel").toString, map.get("thread").toString, map.get("class").toString, map.get("line").toString, map.get("message").toString)
+          val log = new Log(reportId, nodeId, uuid, map.get("logLevel").toString, map.get("thread").toString, map.get("class").toString, map.get("line").toString, map.get("message").toString)
           limiter.add(logRepository.saveAsync(log))
         }
       }) finally source.close()

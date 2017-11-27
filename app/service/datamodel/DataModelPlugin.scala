@@ -13,8 +13,8 @@ import scala.util.matching.Regex
 class DataModelPlugin @Inject()(tableRepository: CassandraTableRepository, keyspaceRepository: CassandraKeyspaceRepository) extends DSECheckPlugin {
   override def process(reportId: String, tmpPath: String): Unit = {
     implicit val limiter = new FutureLimiter[Void]()
-    forEachNode(tmpPath, (nodePath, nodeIp) => {
-      val cfstat = readTablestat(tmpPath, nodeIp)
+    forEachNode(tmpPath, (nodePath, nodeId) => {
+      val cfstat = readTablestat(tmpPath, nodeId)
       val keyspacesAndTables = extractCassandraTable(cfstat, reportId)
       keyspacesAndTables.foreach{case (keyspace, tables)=> {
         limiter.add(keyspaceRepository.saveAsync(keyspace))

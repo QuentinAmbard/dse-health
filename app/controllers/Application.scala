@@ -18,8 +18,11 @@ class Application @Inject () (plugins: java.util.Set[DSECheckPlugin]) extends Co
     Ok(views.html.index("Your new application is ready."))
   }
 
-  def upload = Action(parse.multipartFormData) { request =>
+  def reportHome = Action {
+    Ok(views.html.index("Report home page"))
+  }
 
+  def upload = Action(parse.multipartFormData) { request =>
     request.body.file("analysis").map { analysis =>
       import java.io.File
       val filename = analysis.filename

@@ -27,7 +27,7 @@ object ParsingUtils {
 
   def toJavaFloat(txt: String): java.lang.Float = {
     try{
-      txt.replaceAll("\\s", "").toFloat
+      txt.replaceAll("\\s", "").replaceAll(",", ".").toFloat
     } catch {
       case NonFatal(e) => null
     }
